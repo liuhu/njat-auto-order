@@ -1,0 +1,12 @@
+server:
+  port: 9300
+
+dynamic:
+  config:
+    loginType: 1
+    password: ''
+    phoneNumber: ''
+
+security:
+  basic:
+    enabled: false
