@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 public class VenueOrderQueryDto {
     /**
-     * 场馆
+     * 场馆ID
      */
     private String venueId = "1124641455777345";
 
@@ -18,7 +18,7 @@ public class VenueOrderQueryDto {
      * 查询时间
      * 2019-04-17
      */
-    private String date = "2019-04-20";
+    private String date = "2019-04-24";
 
     /**
      * 用户ID

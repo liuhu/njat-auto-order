@@ -25,7 +25,7 @@ public class UserInfoService {
      * 获取用户信息
      * @return
      */
-    public UserResponseBodyDto getUserInfo() {
+    public UserResponseBodyDto login() {
         if (null == responseBodyDto) {
             responseBodyDto = userTransportService.getUserInfo();
         }

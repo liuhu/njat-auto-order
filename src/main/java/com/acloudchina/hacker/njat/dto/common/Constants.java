@@ -22,6 +22,11 @@ public class Constants {
      */
     public static final String QUERY_VENUE_SELL_ORDER = BASE_URL + "/api/venueApp/queryVenueSellOrder.action";
 
+    /**
+     * 查询场地列表
+     */
+    public static final String QUERY_VENUE_QUERY_LIST = BASE_URL + "/api/venueApp/queryVenueList.action";
+
     public static final String DEVICE_ID = "867527034982920";
     public static final String ACCESS_TOKEN = "03d9b855842a527b6f3f75092b9ab70950fab127da294097979f096291bb5e38";
 

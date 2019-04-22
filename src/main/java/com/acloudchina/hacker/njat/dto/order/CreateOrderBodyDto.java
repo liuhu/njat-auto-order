@@ -1,6 +1,5 @@
 package com.acloudchina.hacker.njat.dto.order;
 
-import com.acloudchina.hacker.njat.dto.common.Constants;
 import lombok.Data;
 
 import java.math.BigDecimal;
