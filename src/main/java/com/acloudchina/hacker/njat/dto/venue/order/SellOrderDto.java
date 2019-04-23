@@ -53,7 +53,8 @@ public class SellOrderDto {
     private String certainVenueName;
 
     /**
-     * 0
+     * 0 未被预定
+     * 1 已被预定
      */
     private Integer isBook;
 

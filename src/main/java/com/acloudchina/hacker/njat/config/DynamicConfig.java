@@ -4,6 +4,10 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * @description:
  * @author: LiuHu
@@ -13,7 +17,14 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "dynamic.config")
 @Data
 public class DynamicConfig {
-    private String loginType;
-    private String password;
-    private String phoneNumber;
+
+    private String venuePriority;
+
+    /**
+     * 获取场馆优先级
+     * @return
+     */
+    public List<Integer> getVenuePriority() {
+        return Arrays.asList(venuePriority.split(",")).stream().map(Integer::valueOf).collect(Collectors.toList());
+    }
 }

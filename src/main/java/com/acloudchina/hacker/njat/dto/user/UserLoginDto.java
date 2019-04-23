@@ -14,7 +14,10 @@ import lombok.Data;
  **/
 @Data
 public class UserLoginDto {
-    private String loginType;
+    /**
+     * 手机号码登录
+     */
+    private String loginType = "1";
     private String password;
     private String phoneNumber;
 }
