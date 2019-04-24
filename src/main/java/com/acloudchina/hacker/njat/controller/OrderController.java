@@ -20,18 +20,24 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    @PostMapping
+    @PostMapping("/tasks")
     public Map<String, CreateOrderDto> addTask(@RequestBody @Valid CreateOrderDto dto) {
         return orderService.addTask(dto);
     }
 
-    @PostMapping("/clean")
+    @PostMapping("/tasks/clean")
     public void cleanTask() {
         orderService.cleanTask();
     }
 
-    @GetMapping
+    @GetMapping("/tasks")
     public Map<String, CreateOrderDto> getAllTask() {
         return orderService.getAllTask();
     }
+
+    @PostMapping("/panic")
+    public void cleanTask(@RequestBody @Valid CreateOrderDto dto) {
+        orderService.immediatePanicOrder(dto);
+    }
+
 }

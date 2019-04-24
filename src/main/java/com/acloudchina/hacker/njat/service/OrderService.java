@@ -60,8 +60,9 @@ public class OrderService {
      * @return
      */
     public Map<String, CreateOrderDto> addTask(CreateOrderDto dto) {
-        taskLockMap.put(dto.getOrderKey(), new ReentrantLock());
-        taskMap.put(dto.getOrderKey(), dto);
+        // 校验用户信息
+        userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
+        addTaskMap(dto);
         return taskMap;
     }
 
@@ -82,10 +83,32 @@ public class OrderService {
     }
 
     /**
-     * 处理订单任务
+     * 立刻抢购
+     * @param dto
+     */
+    public void immediatePanicOrder(CreateOrderDto dto) {
+        // 校验用户信息
+        userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
+        panicOrder(dto);
+    }
+
+    /**
+     * 心跳任务, 保持和服务器的通信, 为抢购做准备
      */
     @Scheduled(initialDelay = 5000, fixedRate = 6000)
-    public void dealOrderTask() {
+    public void heartbeatTask() {
+        long startTime = System.currentTimeMillis();
+        venueTransportService.getVenueList();
+        long endTime = System.currentTimeMillis();
+        log.info("通信维持{}ms...", endTime - startTime);
+    }
+
+    /**
+     * 处理抢购任务
+     * 每日早晨6点00、01、02、03触发一次, 多次触发防止任务失败的重试
+     */
+    @Scheduled(cron = "0 0,1,2,3 6 * * ?")
+    public void dealPanicOrderTask() {
         taskMap.values().forEach(
                 x -> threadPoolExecutor.execute(() -> panicOrder(x))
         );
@@ -132,8 +155,7 @@ public class OrderService {
                 // 订单创建失败
                 if (null == bookNumber) {
                     // 订单创建失败, 移除任务
-                    taskLockMap.remove(dto.getOrderKey());
-                    taskMap.remove(dto.getOrderKey());
+                    removeTaskMap(dto.getOrderKey());
                     log.error("抢购失败 - 创建订单失败! dto = {}", dto);
                     return;
                 }
@@ -143,8 +165,7 @@ public class OrderService {
                     try {
                         // 支付成功 移除任务
                         orderTransportService.payOrder(bookNumber, userInfo);
-                        taskLockMap.remove(dto.getOrderKey());
-                        taskMap.remove(dto.getOrderKey());
+                        removeTaskMap(dto.getOrderKey());
                         log.info("抢购成功! user = {}, date = {}", dto.getPhoneNumber(), dto.getDate());
                         break;
                     } catch (Exception e) {
@@ -159,5 +180,22 @@ public class OrderService {
                 lock.unlock();
             }
         }
+    }
+
+    /**
+     * 添加任务
+     */
+    private void addTaskMap(CreateOrderDto dto) {
+        taskLockMap.put(dto.getOrderKey(), new ReentrantLock());
+        taskMap.put(dto.getOrderKey(), dto);
+    }
+
+    /**
+     * 移除任务
+     * @param key
+     */
+    private void removeTaskMap(String key) {
+        taskLockMap.remove(key);
+        taskMap.remove(key);
     }
 }
