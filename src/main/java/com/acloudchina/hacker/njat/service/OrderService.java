@@ -95,7 +95,7 @@ public class OrderService {
     /**
      * 心跳任务, 保持和服务器的通信, 为抢购做准备
      */
-    @Scheduled(initialDelay = 5000, fixedRate = 6000)
+    @Scheduled(initialDelay = 5000, fixedRate = 20000)
     public void heartbeatTask() {
         long startTime = System.currentTimeMillis();
         venueTransportService.getVenueList();
@@ -107,7 +107,7 @@ public class OrderService {
      * 处理抢购任务
      * 每日早晨6点00、01、02、03触发一次, 多次触发防止任务失败的重试
      */
-    @Scheduled(cron = "0 0,1,2,3 6 * * ?")
+    @Scheduled(zone = "Asia/Shanghai", cron = "0 0,1,2,3 6 * * ?")
     public void dealPanicOrderTask() {
         taskMap.values().forEach(
                 x -> threadPoolExecutor.execute(() -> panicOrder(x))
