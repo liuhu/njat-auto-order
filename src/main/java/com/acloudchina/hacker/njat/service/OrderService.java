@@ -123,6 +123,8 @@ public class OrderService {
                     String nowStr = now.format(DATE_TIME_FORMATTER);
                     if (nowStr.equals(x.getDate())) {
                         threadPoolExecutor.execute(() -> panicOrder(x));
+                    } else {
+                        log.info("还未到达抢购时间, x = {}", x);
                     }
                 }
         );
