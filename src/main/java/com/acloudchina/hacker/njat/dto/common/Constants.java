@@ -13,6 +13,11 @@ public class Constants {
     public static final String QUERY_USER_INFO = BASE_URL + "/api/userManageApp/queryLoginUserInfo.action";
 
     /**
+     * 查询用户信息, 获取userId下单用
+     */
+    public static final String QUERY_USER_CARD_INFO = BASE_URL + "/api/mine/queryMyCardPackageList.action";
+
+    /**
      * 查询产地信息  VenueEntityDto
      */
     public static final String QUERY_VENUE_INFO = BASE_URL + "/api/venueApp/queryVenueInfo.action";
@@ -35,7 +40,16 @@ public class Constants {
     /**
      * 支付订单
      */
-    public static final String PAY_ORDER = BASE_URL + "/api/common/order/countDown.action";
+    public static final String PAY_ORDER = BASE_URL + "/api/paymentApp/paymentOrder.action";
+
+    /**
+     * 支付校验
+     */
+    public static final String PAY_CHECK = BASE_URL + "/api/orderApp/otherPayCheck.action";
+
+    public static final String ORG_CODE = "60fca1582822456bbd5d77f719daca3e";
+    public static final String VENUE_ID = "1124641455777345";
+    public static final String VENUE_NAME = "副馆羽毛球";
 
 
     public static final String DEVICE_ID = "867527034912920";

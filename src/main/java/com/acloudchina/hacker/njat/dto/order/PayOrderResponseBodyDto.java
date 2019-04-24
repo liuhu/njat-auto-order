@@ -9,5 +9,5 @@ import lombok.Data;
  **/
 @Data
 public class PayOrderResponseBodyDto {
-    private String count;
+
 }

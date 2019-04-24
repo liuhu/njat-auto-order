@@ -1,5 +1,6 @@
 package com.acloudchina.hacker.njat.dto.order;
 
+import com.acloudchina.hacker.njat.dto.common.Constants;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -51,16 +52,16 @@ public class CreateOrderRequestBodyDto {
     /**
      * VenueEntityDto.orgCode
      */
-    private String orgCode = "60fca1582822456bbd5d77f719daca3e";
+    private String orgCode = Constants.ORG_CODE;
     private String paySource = "1";
     /**
      * VenueEntityDto.venueId
      */
-    private String sourceFkId = "1124641455777345";
+    private String sourceFkId = Constants.VENUE_ID;
     /**
      * VenueEntityDto.venueName
      */
-    private String sourceName = "副馆羽毛球";
+    private String sourceName = Constants.VENUE_NAME;
     /**
      * 15.0
      */

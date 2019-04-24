@@ -2,7 +2,7 @@ package com.acloudchina.hacker.njat.service;
 
 import com.acloudchina.hacker.njat.config.DynamicConfig;
 import com.acloudchina.hacker.njat.dto.order.CreateOrderDto;
-import com.acloudchina.hacker.njat.dto.user.UserResponseBodyDto;
+import com.acloudchina.hacker.njat.dto.user.UserInfoDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.service.transport.OrderTransportService;
 import com.acloudchina.hacker.njat.service.transport.VenueTransportService;
@@ -99,10 +99,10 @@ public class OrderService {
         ReentrantLock lock = taskLockMap.get(dto.getOrderKey());
         try {
             if (lock.tryLock()) {
-                log.info("Do order.........");
+                log.info("开始抢购! dto = {}", dto);
 
                 // 获取用户信息
-                UserResponseBodyDto userInfo = userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
+                UserInfoDto userInfo = userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
                 if (null == userInfo || StringUtils.isBlank(userInfo.getUserId())) {
                     log.error("获取用户信息异常, dto = {}", dto);
                     return;
@@ -122,6 +122,8 @@ public class OrderService {
                 for (Integer venueId : dynamicConfig.getVenuePriority()) {
                     try {
                         bookNumber = orderTransportService.createOrder(dto, userInfo.getUserId(), orderResponse.getSellOrderMap().get(venueId));
+                        // 订单创建成功跳出循环
+                        break;
                     } catch (Exception e) {
                         log.error("创建订单失败, dto = {}, venueId = {}, e = {}", dto, venueId, e);
                     }
@@ -140,7 +142,7 @@ public class OrderService {
                 for (int i = 0; i < PAY_RETRY_COUNT; i++) {
                     try {
                         // 支付成功 移除任务
-                        orderTransportService.payOrder(bookNumber, userInfo.getUserId());
+                        orderTransportService.payOrder(bookNumber, userInfo);
                         taskLockMap.remove(dto.getOrderKey());
                         taskMap.remove(dto.getOrderKey());
                         log.info("抢购成功! user = {}, date = {}", dto.getPhoneNumber(), dto.getDate());

@@ -2,6 +2,7 @@ package com.acloudchina.hacker.njat.service.transport;
 
 import com.acloudchina.hacker.njat.dto.common.Constants;
 import com.acloudchina.hacker.njat.dto.order.*;
+import com.acloudchina.hacker.njat.dto.user.UserInfoDto;
 import com.acloudchina.hacker.njat.dto.venue.order.SellOrderDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,8 +30,8 @@ public class OrderTransportService extends TransportBaseService {
      */
     public String createOrder(final CreateOrderDto dto, final String userId, final List<SellOrderDto> sellOrderDtos) {
         if (null ==  sellOrderDtos || sellOrderDtos.isEmpty()) {
-            log.warn("场地订单信息异常, dto = {}, userId = {}", dto, userId);
-            throw new IllegalArgumentException("场地订单信息异常!");
+            log.warn("场地订单信息为空, dto = {}, userId = {}", dto, userId);
+            throw new RuntimeException("场地订单信息为空!");
         }
         List<SellOrderDto> pendingOrder = sellOrderDtos.stream()
                 // 筛选出时间段
@@ -40,7 +41,7 @@ public class OrderTransportService extends TransportBaseService {
                 .collect(Collectors.toList());
         if (pendingOrder.size() != dto.getOrderTime().size()) {
             log.warn("场地已被预定, pendingOrder = {}", pendingOrder);
-            throw new IllegalArgumentException("场地已被预定");
+            throw new RuntimeException("场地已被预定");
         }
 
         List<GoodOrderDto> goodOrderList = pendingOrder.stream().map(x -> {
@@ -66,8 +67,8 @@ public class OrderTransportService extends TransportBaseService {
                 || responseDto.getHeader().getRetStatus() != 0
                 || null == responseDto.getBody()
                 || StringUtils.isBlank(responseDto.getBody().getBookNumber())) {
-            log.error("创建订单异常, responseDto = {}", responseDto);
-            throw new IllegalArgumentException("创建订单异常");
+            log.error("创建订单异常, errorMsg = {}, responseDto = {}", null != responseDto ? null != responseDto.getHeader() ? responseDto.getHeader().getRetMessage() : null : null, responseDto);
+            throw new RuntimeException("创建订单异常");
         }
         return responseDto.getBody().getBookNumber();
     }
@@ -75,19 +76,34 @@ public class OrderTransportService extends TransportBaseService {
     /**
      * 支付订单
      * @param bookNumber
-     * @param userId
+     * @param userInfoDto
      */
-    public void payOrder(String bookNumber, String userId) {
+    public void payOrder(String bookNumber, UserInfoDto userInfoDto) {
+        log.info("支付订单, bookNumber = {}, userInfoDto = {}", bookNumber, userInfoDto);
         PayOrderRequestBodyDto requestDto = new PayOrderRequestBodyDto();
         requestDto.setBookNumber(bookNumber);
-        requestDto.setUserId(userId);
+        requestDto.setUserId(userInfoDto.getUserId());
+        requestDto.setPaytypeId(userInfoDto.getPayCardId());
         PayOrderResponseDto responseDto = exchange(requestDto, Constants.PAY_ORDER, PayOrderResponseDto.class);
-        if (null != responseDto
-                && null != responseDto.getHeader()
-                && responseDto.getHeader().getRetStatus() == 0) {
-            return;
+        if (null == responseDto
+                || null == responseDto.getHeader()
+                || responseDto.getHeader().getRetStatus() != 0) {
+            log.error("订单支付失败, requestDto = {}, errorMsg = {}", requestDto, null != responseDto ? null != responseDto.getHeader() ? responseDto.getHeader().getRetMessage() : null : null);
+            throw new RuntimeException("订单支付失败");
         }
-        log.error("订单支付失败, userId = {}, bookNumber = {}", userId, bookNumber);
-        throw new IllegalArgumentException("订单支付失败");
+
+        PayCheckRequestDto payCheckRequestDto = new PayCheckRequestDto();
+        payCheckRequestDto.setOrderId(bookNumber);
+        payCheckRequestDto.setPassWord(userInfoDto.getPayPass());
+        payCheckRequestDto.setPaytypeId(userInfoDto.getPayCardId());
+        payCheckRequestDto.setUserId(userInfoDto.getUserId());
+        PayCheckResponseDto countDownResponseDto = exchange(payCheckRequestDto, Constants.PAY_CHECK, PayCheckResponseDto.class);
+
+        if (null == countDownResponseDto
+                || null == countDownResponseDto.getHeader()
+                || countDownResponseDto.getHeader().getRetStatus() != 0) {
+            log.error("订单支付校验失败, payCheckRequestDto = {}, errorMsg = {}", payCheckRequestDto, null != countDownResponseDto ? null != countDownResponseDto.getHeader() ? countDownResponseDto.getHeader().getRetMessage() : null : null);
+            throw new RuntimeException("订单支付校验失败");
+        }
     }
 }

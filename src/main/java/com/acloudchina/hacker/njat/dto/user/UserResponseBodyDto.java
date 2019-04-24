@@ -40,4 +40,5 @@ public class UserResponseBodyDto {
     private String userId;
     private String userStatus;
     private String userWeight;
+    private String payPass;
 }
