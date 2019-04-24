@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -40,6 +42,11 @@ public class OrderService {
 
     @Autowired
     private ThreadPoolExecutor threadPoolExecutor;
+
+    /**
+     * 时间格式化
+     */
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static final int PAY_RETRY_COUNT = 5;
 
@@ -89,6 +96,7 @@ public class OrderService {
     public void immediatePanicOrder(CreateOrderDto dto) {
         // 校验用户信息
         userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
+        addTaskMap(dto);
         panicOrder(dto);
     }
 
@@ -110,7 +118,13 @@ public class OrderService {
     @Scheduled(zone = "Asia/Shanghai", cron = "0 0,1,2,3 6 * * ?")
     public void dealPanicOrderTask() {
         taskMap.values().forEach(
-                x -> threadPoolExecutor.execute(() -> panicOrder(x))
+                x -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    String nowStr = now.format(DATE_TIME_FORMATTER);
+                    if (nowStr.equals(x.getDate())) {
+                        threadPoolExecutor.execute(() -> panicOrder(x));
+                    }
+                }
         );
     }
 
