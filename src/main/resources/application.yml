@@ -5,6 +5,10 @@ spring:
   profiles:
     active: dev
 
+schedule:
+    autoPanicOrder:
+      cron: '0,1,2,4,6,8,10,12,14,16,26,36,46,56 0,1,2,3,4,5 6 * * ?'
+
 dynamic:
   config:
     password: '100030'
