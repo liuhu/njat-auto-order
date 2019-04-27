@@ -1,4 +1,4 @@
-package com.acloudchina.hacker.njat.dto.order;
+package com.acloudchina.hacker.njat.dto.task;
 
 import lombok.Data;
 
@@ -11,12 +11,12 @@ import java.util.List;
  * @create: 2019-04-26 17:55
  **/
 @Data
-public class OrderTaskDto {
+public class TaskInfoDto {
 
     /**
      * 任务ID
      */
-    private String orderTaskId;
+    private String taskId;
 
     /**
      * 用户ID
@@ -56,7 +56,7 @@ public class OrderTaskDto {
     /**
      * 预定时间段, 默认是晚上19:00~21:00
      */
-    private List<String> orderTime = Arrays.asList("19:00", "20:00");
+    private List<String> times = Arrays.asList("19:00", "20:00");
 
     /**
      * 场地优先级

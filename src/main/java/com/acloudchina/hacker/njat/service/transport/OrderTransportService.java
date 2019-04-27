@@ -2,6 +2,7 @@ package com.acloudchina.hacker.njat.service.transport;
 
 import com.acloudchina.hacker.njat.dto.common.Constants;
 import com.acloudchina.hacker.njat.dto.order.*;
+import com.acloudchina.hacker.njat.dto.task.TaskInfoDto;
 import com.acloudchina.hacker.njat.dto.venue.order.SellOrderDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,23 +23,23 @@ public class OrderTransportService extends TransportBaseService {
 
     /**
      * 处理创建订单
-     * @param orderTaskDto 任务信息
+     * @param taskInfoDto 任务信息
      * @param sellOrderDtos 场地信息
      * @return 支付单编号
      */
-    public String createOrder(final OrderTaskDto orderTaskDto,
+    public String createOrder(final TaskInfoDto taskInfoDto,
                               final List<SellOrderDto> sellOrderDtos) {
         if (null ==  sellOrderDtos || sellOrderDtos.isEmpty()) {
-            log.warn("场地订单信息为空, orderTaskDto = {}, sellOrderDtos = {}", orderTaskDto, sellOrderDtos);
+            log.warn("场地订单信息为空, taskInfoDto = {}, sellOrderDtos = {}", taskInfoDto, sellOrderDtos);
             throw new RuntimeException("场地订单信息为空!");
         }
         List<SellOrderDto> pendingOrder = sellOrderDtos.stream()
                 // 筛选出时间段
-                .filter(x -> orderTaskDto.getOrderTime().contains(x.getStartDate()))
+                .filter(x -> taskInfoDto.getTimes().contains(x.getStartDate()))
                 // 筛选出未被预定的
                 .filter(x -> x.getIsBook() == 0)
                 .collect(Collectors.toList());
-        if (pendingOrder.size() != orderTaskDto.getOrderTime().size()) {
+        if (pendingOrder.size() != taskInfoDto.getTimes().size()) {
             log.warn("场地已被预定, pendingOrder = {}", pendingOrder);
             throw new RuntimeException("场地已被预定");
         }
@@ -48,7 +49,7 @@ public class OrderTransportService extends TransportBaseService {
             goodOrderDto.setGoodCutPrice(String.valueOf(x.getOrderPrice()));
             goodOrderDto.setGoodFkid(x.getSellOrderMxId());
             goodOrderDto.setGoodId(x.getGoodId());
-            goodOrderDto.setGoodName(GoodOrderDto.buildGoodName(orderTaskDto.getDate(), x.getCertainVenueName(), x.getStartDate(), x.getEndDate()));
+            goodOrderDto.setGoodName(GoodOrderDto.buildGoodName(taskInfoDto.getDate(), x.getCertainVenueName(), x.getStartDate(), x.getEndDate()));
             goodOrderDto.setGoodPrice(String.valueOf(x.getOrderPrice()));
             goodOrderDto.setVenueSaleId(x.getVenueSaleId());
             return goodOrderDto;
@@ -56,13 +57,13 @@ public class OrderTransportService extends TransportBaseService {
         DecimalFormat decimalFormat = new DecimalFormat("0.0");
         Integer totalAmount = pendingOrder.stream().mapToInt(SellOrderDto::getOrderPrice).sum();
         CreateOrderRequestBodyDto orderRequest = new CreateOrderRequestBodyDto();
-        orderRequest.setOrgCode(orderTaskDto.getOrgCode());
-        orderRequest.setSourceFkId(orderTaskDto.getVenueId());
-        orderRequest.setSourceName(orderTaskDto.getVenueName());
+        orderRequest.setOrgCode(taskInfoDto.getOrgCode());
+        orderRequest.setSourceFkId(taskInfoDto.getVenueId());
+        orderRequest.setSourceName(taskInfoDto.getVenueName());
         orderRequest.setGoodOrderList(goodOrderList);
         orderRequest.setTotalAmount(decimalFormat.format(totalAmount));
         orderRequest.setTotalCutAmount(decimalFormat.format(totalAmount));
-        orderRequest.setUserId(orderTaskDto.getUserId());
+        orderRequest.setUserId(taskInfoDto.getUserId());
         CreateOrderResponseDto responseDto = exchange(orderRequest, Constants.CREATE_ORDER, CreateOrderResponseDto.class);
 
         if (null == responseDto.getHeader()
@@ -78,15 +79,15 @@ public class OrderTransportService extends TransportBaseService {
     /**
      * 支付订单
      * @param bookNumber
-     * @param orderTaskDto
+     * @param taskInfoDto
      */
-    public void payOrder(String bookNumber, OrderTaskDto orderTaskDto) {
-        log.info("支付订单, bookNumber = {}, orderTaskDto = {}", bookNumber, orderTaskDto);
+    public void payOrder(String bookNumber, TaskInfoDto taskInfoDto) {
+        log.info("支付订单, bookNumber = {}, taskInfoDto = {}", bookNumber, taskInfoDto);
         PayOrderRequestBodyDto requestDto = new PayOrderRequestBodyDto();
         requestDto.setBookNumber(bookNumber);
-        requestDto.setUserId(orderTaskDto.getUserId());
-        requestDto.setPaytypeId(orderTaskDto.getPayCardId());
-        requestDto.setOrgCode(orderTaskDto.getOrgCode());
+        requestDto.setUserId(taskInfoDto.getUserId());
+        requestDto.setPaytypeId(taskInfoDto.getPayCardId());
+        requestDto.setOrgCode(taskInfoDto.getOrgCode());
         PayOrderResponseDto responseDto = exchange(requestDto, Constants.PAY_ORDER, PayOrderResponseDto.class);
         if (null == responseDto
                 || null == responseDto.getHeader()
@@ -97,9 +98,9 @@ public class OrderTransportService extends TransportBaseService {
 
         PayCheckRequestDto payCheckRequestDto = new PayCheckRequestDto();
         payCheckRequestDto.setOrderId(bookNumber);
-        payCheckRequestDto.setPassWord(orderTaskDto.getPayPass());
-        payCheckRequestDto.setPaytypeId(orderTaskDto.getPayCardId());
-        payCheckRequestDto.setUserId(orderTaskDto.getUserId());
+        payCheckRequestDto.setPassWord(taskInfoDto.getPayPass());
+        payCheckRequestDto.setPaytypeId(taskInfoDto.getPayCardId());
+        payCheckRequestDto.setUserId(taskInfoDto.getUserId());
         PayCheckResponseDto countDownResponseDto = exchange(payCheckRequestDto, Constants.PAY_CHECK, PayCheckResponseDto.class);
 
         if (null == countDownResponseDto

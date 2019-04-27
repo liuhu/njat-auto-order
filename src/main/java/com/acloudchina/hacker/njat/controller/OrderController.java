@@ -1,8 +1,8 @@
 package com.acloudchina.hacker.njat.controller;
 
-import com.acloudchina.hacker.njat.dto.order.CreateOrderDto;
-import com.acloudchina.hacker.njat.dto.order.OrderTaskDto;
-import com.acloudchina.hacker.njat.service.OrderService;
+import com.acloudchina.hacker.njat.dto.task.CreateTaskDto;
+import com.acloudchina.hacker.njat.dto.task.TaskInfoDto;
+import com.acloudchina.hacker.njat.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,30 +15,35 @@ import java.util.Map;
  * @create: 2019-04-23 22:37
  **/
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/tasks")
 public class OrderController {
 
     @Autowired
-    private OrderService orderService;
+    private TaskService taskService;
 
-    @PostMapping("/tasks")
-    public OrderTaskDto addTask(@RequestBody @Valid CreateOrderDto dto) {
-        return orderService.addTask(dto);
+    /**
+     * 添加
+     * @param dto
+     * @return
+     */
+    @PostMapping
+    public TaskInfoDto addTask(@RequestBody @Valid CreateTaskDto dto) {
+        return taskService.addTask(dto);
     }
 
-    @PostMapping("/tasks/clean")
+    @PostMapping("/clean")
     public void cleanTask() {
-        orderService.cleanTask();
+        taskService.cleanTask();
     }
 
-    @GetMapping("/tasks")
-    public Map<String, OrderTaskDto> getAllTask() {
-        return orderService.getAllTask();
+    @GetMapping
+    public Map<String, TaskInfoDto> getAllTask() {
+        return taskService.getAllTask();
     }
 
-    @PostMapping("/panic")
-    public OrderTaskDto cleanTask(@RequestBody @Valid CreateOrderDto dto) {
-        return orderService.immediatePanicOrder(dto);
+        @PostMapping("/panic")
+    public TaskInfoDto cleanTask(@RequestBody @Valid CreateTaskDto dto) {
+        return taskService.immediatePanic(dto);
     }
 
 }
