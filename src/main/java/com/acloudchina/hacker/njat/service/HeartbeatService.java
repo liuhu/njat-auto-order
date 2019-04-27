@@ -1,0 +1,31 @@
+package com.acloudchina.hacker.njat.service;
+
+import com.acloudchina.hacker.njat.service.transport.VenueTransportService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+/**
+ * @description:
+ * @author: LiuHu
+ * @create: 2019-04-27 09:23
+ **/
+@Service
+@Slf4j
+public class HeartbeatService {
+
+    @Autowired
+    private VenueTransportService venueTransportService;
+
+    /**
+     * 心跳任务, 保持和服务器的通信, 为抢购做准备
+     */
+    @Scheduled(initialDelay = 5000, fixedRate = 30000)
+    public void heartbeatTask() {
+        long startTime = System.currentTimeMillis();
+        venueTransportService.getVenueTypeCodeByName("游泳馆");
+        long endTime = System.currentTimeMillis();
+        log.info("通信维持{}ms...", endTime - startTime);
+    }
+}

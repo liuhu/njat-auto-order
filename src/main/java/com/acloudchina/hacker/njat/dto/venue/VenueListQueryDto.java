@@ -16,5 +16,5 @@ public class VenueListQueryDto {
     /**
      * 001 是指羽毛球场地
      */
-    private String venueTypeCode = "001";
+    private String venueTypeCode;
 }

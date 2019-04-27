@@ -1,9 +1,9 @@
 package com.acloudchina.hacker.njat.dto.order;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,6 +23,7 @@ public class CreateOrderDto {
     /**
      * 订购时间段
      */
+    @NotNull
     private List<String> orderTime = Arrays.asList("19:00", "20:00");
 
     /**
@@ -38,11 +39,14 @@ public class CreateOrderDto {
     private String password;
 
     /**
-     * 获取任务Key
-     * @return
+     * 场地类型名称
+     * 体育馆,游泳馆
      */
-    @JsonIgnore
-    public String getOrderKey() {
-        return phoneNumber + "-" + date;
-    }
+    @NotBlank
+    private String venueTypeName;
+
+    /**
+     * 场地优先级
+     */
+    private List<Integer> venuePriority;
 }

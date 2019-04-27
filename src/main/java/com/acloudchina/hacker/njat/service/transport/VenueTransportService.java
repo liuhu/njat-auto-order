@@ -7,6 +7,8 @@ import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseDto;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 /**
  * @description:
  * @author: LiuHu
@@ -16,16 +18,39 @@ import org.springframework.stereotype.Service;
 public class VenueTransportService extends TransportBaseService {
 
     /**
-     * 获取场馆列表
+     * 查询场地类型信息
      * @return
      */
-    public VenueListResponseBodyDto getVenueList() {
-        VenueListQueryDto queryDto = new VenueListQueryDto();
-        VenueListResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_QUERY_LIST, VenueListResponseDto.class);
-        if (null == responseDto || null == responseDto.getBody()) {
-            return null;
+    public String getVenueTypeCodeByName(String venueTypeName) {
+        VenueTypeQueryDto queryDto = new VenueTypeQueryDto();
+        VenueTypeResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_TYPE_LIST, VenueTypeResponseDto.class);
+        if (null == responseDto
+                || null == responseDto.getBody()
+                || null == responseDto.getBody().getVenueTypeList()) {
+            throw new IllegalArgumentException("无法获取场地列表");
         }
-        return responseDto.getBody();
+        Optional<VenueTypeDto> venueTypeDtoOptional = responseDto.getBody().getVenueTypeList().stream().filter(x -> x.getVenueTypeName().equals(venueTypeName)).findAny();
+        if (venueTypeDtoOptional.isPresent()) {
+            return venueTypeDtoOptional.get().getVenueTypeCode();
+        }
+        throw new IllegalArgumentException("无法获取场地Code");
+    }
+
+    /**
+     * 获取场馆列表信息
+     * @return
+     */
+    public VenueListEntityDto getVenueInfoByCode(String venueTypeCode) {
+        VenueListQueryDto queryDto = new VenueListQueryDto();
+        queryDto.setVenueTypeCode(venueTypeCode);
+        VenueListResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_LIST, VenueListResponseDto.class);
+        if (null == responseDto
+                || null == responseDto.getBody()
+                || null == responseDto.getBody().getVenueEntityList()
+                || responseDto.getBody().getVenueEntityList().isEmpty()) {
+            throw new IllegalArgumentException("获取场馆信息异常");
+        }
+        return responseDto.getBody().getVenueEntityList().get(0);
     }
 
     /**
@@ -33,26 +58,24 @@ public class VenueTransportService extends TransportBaseService {
      * @param venueId
      * @return
      */
-    public VenueEntityResponseBodyDto getVenueEntityInfo(String venueId) {
+    public VenueEntityDto getVenueEntityInfo(String venueId) {
         VenueEntityQueryDto queryDto = new VenueEntityQueryDto();
         queryDto.setVenueId(venueId);
         VenueEntityResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_INFO, VenueEntityResponseDto.class);
-        if (null == responseDto || null == responseDto.getBody()) {
-            return null;
+        if (null == responseDto
+                || null == responseDto.getBody()
+                || null == responseDto.getBody().getVenueEntity()) {
+            throw new IllegalArgumentException("获取场馆详细信息异常");
         }
-        return responseDto.getBody();
+        return responseDto.getBody().getVenueEntity();
     }
 
     /**
-     * 更加时间查询场地订单列表
-     * @param date 2019-04-24
-     * @param userId
+     * 根据时间查询场地订单列表
+     * @param queryDto
      * @return
      */
-    public VenueOrderResponseBodyDto getVenueOrder(String date, String userId) {
-        VenueOrderQueryDto queryDto = new VenueOrderQueryDto();
-        queryDto.setDate(date);
-        queryDto.setUserId(userId);
+    public VenueOrderResponseBodyDto getVenueOrder(VenueOrderQueryDto queryDto) {
         VenueOrderResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_SELL_ORDER, VenueOrderResponseDto.class);
         if (null == responseDto || null == responseDto.getBody()) {
             return null;

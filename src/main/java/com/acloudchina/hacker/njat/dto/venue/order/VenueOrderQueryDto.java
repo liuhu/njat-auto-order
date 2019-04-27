@@ -1,6 +1,5 @@
 package com.acloudchina.hacker.njat.dto.venue.order;
 
-import com.acloudchina.hacker.njat.dto.common.Constants;
 import lombok.Data;
 
 /**
@@ -13,7 +12,7 @@ public class VenueOrderQueryDto {
     /**
      * 场馆ID
      */
-    private String venueId = Constants.VENUE_ID;
+    private String venueId;
 
     /**
      * 查询时间

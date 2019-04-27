@@ -1,6 +1,7 @@
 package com.acloudchina.hacker.njat.controller;
 
 import com.acloudchina.hacker.njat.dto.order.CreateOrderDto;
+import com.acloudchina.hacker.njat.dto.order.OrderTaskDto;
 import com.acloudchina.hacker.njat.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping("/tasks")
-    public Map<String, CreateOrderDto> addTask(@RequestBody @Valid CreateOrderDto dto) {
+    public OrderTaskDto addTask(@RequestBody @Valid CreateOrderDto dto) {
         return orderService.addTask(dto);
     }
 
@@ -31,13 +32,13 @@ public class OrderController {
     }
 
     @GetMapping("/tasks")
-    public Map<String, CreateOrderDto> getAllTask() {
+    public Map<String, OrderTaskDto> getAllTask() {
         return orderService.getAllTask();
     }
 
     @PostMapping("/panic")
-    public void cleanTask(@RequestBody @Valid CreateOrderDto dto) {
-        orderService.immediatePanicOrder(dto);
+    public OrderTaskDto cleanTask(@RequestBody @Valid CreateOrderDto dto) {
+        return orderService.immediatePanicOrder(dto);
     }
 
 }

@@ -52,16 +52,16 @@ public class CreateOrderRequestBodyDto {
     /**
      * VenueEntityDto.orgCode
      */
-    private String orgCode = Constants.ORG_CODE;
+    private String orgCode;
     private String paySource = "1";
     /**
      * VenueEntityDto.venueId
      */
-    private String sourceFkId = Constants.VENUE_ID;
+    private String sourceFkId;
     /**
      * VenueEntityDto.venueName
      */
-    private String sourceName = Constants.VENUE_NAME;
+    private String sourceName;
     /**
      * 15.0
      */

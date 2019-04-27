@@ -1,6 +1,5 @@
 package com.acloudchina.hacker.njat.dto.order;
 
-import com.acloudchina.hacker.njat.dto.common.Constants;
 import lombok.Data;
 
 /**
@@ -23,11 +22,10 @@ public class PayOrderRequestBodyDto {
     private String bookNumber;
     private String paytypeId;
     private String userId;
-
+    private String orgCode;
 
     private String couponId;
     private String discountAmoun = "10";
     private String haveBody = "0";
-    private String orgCode = Constants.ORG_CODE;
     private String payType = "6";
 }

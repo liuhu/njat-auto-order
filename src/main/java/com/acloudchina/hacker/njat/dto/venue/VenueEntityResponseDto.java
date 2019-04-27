@@ -1,5 +1,6 @@
 package com.acloudchina.hacker.njat.dto.venue;
 
+import com.acloudchina.hacker.njat.dto.common.ResponseDto;
 import lombok.Data;
 
 import java.util.List;
@@ -78,6 +79,6 @@ import java.util.List;
  * }
  **/
 @Data
-public class VenueEntityResponseDto {
+public class VenueEntityResponseDto extends ResponseDto {
     private VenueEntityResponseBodyDto body;
 }

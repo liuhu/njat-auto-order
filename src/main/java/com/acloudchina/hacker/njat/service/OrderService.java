@@ -2,12 +2,15 @@ package com.acloudchina.hacker.njat.service;
 
 import com.acloudchina.hacker.njat.config.DynamicConfig;
 import com.acloudchina.hacker.njat.dto.order.CreateOrderDto;
+import com.acloudchina.hacker.njat.dto.order.OrderTaskDto;
 import com.acloudchina.hacker.njat.dto.user.UserInfoDto;
+import com.acloudchina.hacker.njat.dto.venue.VenueEntityDto;
+import com.acloudchina.hacker.njat.dto.venue.VenueListEntityDto;
+import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderQueryDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.service.transport.OrderTransportService;
 import com.acloudchina.hacker.njat.service.transport.VenueTransportService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -48,13 +51,16 @@ public class OrderService {
      */
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /**
+     * 支付重试次数
+     */
     private static final int PAY_RETRY_COUNT = 5;
 
     /**
      * 任务列表
      * key
      */
-    private Map<String, CreateOrderDto> taskMap = new ConcurrentHashMap<>();
+    private Map<String, OrderTaskDto> taskMap = new ConcurrentHashMap<>();
 
     /**
      * 任务锁, 防止任务重复执行
@@ -66,11 +72,34 @@ public class OrderService {
      * @param dto
      * @return
      */
-    public Map<String, CreateOrderDto> addTask(CreateOrderDto dto) {
+    public OrderTaskDto addTask(CreateOrderDto dto) {
         // 校验用户信息
-        userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
-        addTaskMap(dto);
-        return taskMap;
+        UserInfoDto userInfo = userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
+        // 获取场地code
+        String venueCode = venueTransportService.getVenueTypeCodeByName(dto.getVenueTypeName());
+        // 获取场馆列表信息
+        VenueListEntityDto venueListEntityDto = venueTransportService.getVenueInfoByCode(venueCode);
+        // 获取场馆详细
+        VenueEntityDto venueEntityDto = venueTransportService.getVenueEntityInfo(venueListEntityDto.getVenueId());
+
+        //生成并添加任务
+        OrderTaskDto orderTaskDto = new OrderTaskDto();
+        orderTaskDto.setOrderTaskId(generateOrderTaskId(dto.getPhoneNumber(), dto.getDate(), venueEntityDto.getVenueId()));
+        orderTaskDto.setUserId(userInfo.getUserId());
+        orderTaskDto.setPayCardId(userInfo.getPayCardId());
+        orderTaskDto.setPayPass(userInfo.getPayPass());
+        orderTaskDto.setVenueId(venueEntityDto.getVenueId());
+        orderTaskDto.setVenueName(venueEntityDto.getVenueName());
+        orderTaskDto.setOrgCode(venueEntityDto.getOrgCode());
+        orderTaskDto.setDate(dto.getDate());
+        orderTaskDto.setOrderTime(dto.getOrderTime());
+        if (null != dto.getVenuePriority() && !dto.getVenuePriority().isEmpty()) {
+            orderTaskDto.setVenuePriority(dto.getVenuePriority());
+        } else {
+            orderTaskDto.setVenuePriority(dynamicConfig.getVenuePriority(venueCode));
+        }
+        addTaskMap(orderTaskDto);
+        return orderTaskDto;
     }
 
     /**
@@ -85,7 +114,7 @@ public class OrderService {
      * 获取全部任务
      * @return
      */
-    public Map<String, CreateOrderDto> getAllTask() {
+    public Map<String, OrderTaskDto> getAllTask() {
         return taskMap;
     }
 
@@ -93,22 +122,10 @@ public class OrderService {
      * 立刻抢购
      * @param dto
      */
-    public void immediatePanicOrder(CreateOrderDto dto) {
-        // 校验用户信息
-        userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
-        addTaskMap(dto);
-        panicOrder(dto);
-    }
-
-    /**
-     * 心跳任务, 保持和服务器的通信, 为抢购做准备
-     */
-    @Scheduled(initialDelay = 5000, fixedRate = 20000)
-    public void heartbeatTask() {
-        long startTime = System.currentTimeMillis();
-        venueTransportService.getVenueList();
-        long endTime = System.currentTimeMillis();
-        log.info("通信维持{}ms...", endTime - startTime);
+        public OrderTaskDto immediatePanicOrder(CreateOrderDto dto) {
+        OrderTaskDto orderTaskDto = addTask(dto);
+        panicOrder(orderTaskDto);
+        return orderTaskDto;
     }
 
     /**
@@ -116,7 +133,7 @@ public class OrderService {
      * 每日早晨6点触发, 多次触发防止任务失败的重试
      */
     @Scheduled(zone = "Asia/Shanghai", cron = "${schedule.autoPanicOrder.cron}")
-    public void dealPanicOrderTask0() {
+    public void panicOrderTask() {
         taskMap.values().forEach(
                 x -> {
                     LocalDateTime now = LocalDateTime.now();
@@ -132,47 +149,44 @@ public class OrderService {
 
     /**
      * 抢购
-     * @param dto
+     * @param taskDto
      */
-    private void panicOrder(CreateOrderDto dto) {
-        ReentrantLock lock = taskLockMap.get(dto.getOrderKey());
+    private void panicOrder(OrderTaskDto taskDto) {
+        ReentrantLock lock = taskLockMap.get(taskDto.getOrderTaskId());
         try {
             if (lock.tryLock()) {
-                log.info("开始抢购! dto = {}", dto);
-
-                // 获取用户信息
-                UserInfoDto userInfo = userInfoService.getUserInfo(dto.getPhoneNumber(), dto.getPassword());
-                if (null == userInfo || StringUtils.isBlank(userInfo.getUserId())) {
-                    log.error("获取用户信息异常, dto = {}", dto);
-                    return;
-                }
+                log.info("开始抢购! taskDto = {}", taskDto);
 
                 // 获取场地信息
-                VenueOrderResponseBodyDto orderResponse = venueTransportService.getVenueOrder(dto.getDate(), userInfo.getUserId());
+                VenueOrderQueryDto venueOrderQueryDto = new VenueOrderQueryDto();
+                venueOrderQueryDto.setUserId(taskDto.getUserId());
+                venueOrderQueryDto.setDate(taskDto.getDate());
+                venueOrderQueryDto.setVenueId(taskDto.getVenueId());
+                VenueOrderResponseBodyDto orderResponse = venueTransportService.getVenueOrder(venueOrderQueryDto);
                 if (null == orderResponse
                         || null == orderResponse.getSellOrderMap()
                         || orderResponse.getSellOrderMap().isEmpty()) {
-                    log.warn("[{}]的羽毛球场地还未开放预定, 或获取场地失败. dto = {}", dto.getDate(), dto);
+                    log.warn("[{}]-[{}]的场地还未开放预定, 或获取场地失败. dto = {}", taskDto.getDate(), taskDto.getVenueName(), taskDto);
                     return;
                 }
 
                 // 根据场地优先级创建订单
                 String bookNumber = null;
-                for (Integer venueId : dynamicConfig.getVenuePriority()) {
+                for (Integer venueId : taskDto.getVenuePriority()) {
                     try {
-                        bookNumber = orderTransportService.createOrder(dto, userInfo.getUserId(), orderResponse.getSellOrderMap().get(venueId));
+                        bookNumber = orderTransportService.createOrder(taskDto, orderResponse.getSellOrderMap().get(venueId));
                         // 订单创建成功跳出循环
                         break;
                     } catch (Exception e) {
-                        log.error("创建订单失败, dto = {}, venueId = {}, e = {}", dto, venueId, e);
+                        log.error("创建订单失败, venueName = {}, taskDto = {}, e = {}", taskDto.getVenueName(), taskDto, e);
                     }
                 }
 
                 // 订单创建失败
                 if (null == bookNumber) {
                     // 订单创建失败, 移除任务
-                    removeTaskMap(dto.getOrderKey());
-                    log.error("抢购失败 - 创建订单失败! dto = {}", dto);
+                    removeTaskMap(taskDto.getOrderTaskId());
+                    log.error("抢购失败 - 创建订单失败! taskDto = {}", taskDto);
                     return;
                 }
 
@@ -180,17 +194,17 @@ public class OrderService {
                 for (int i = 0; i < PAY_RETRY_COUNT; i++) {
                     try {
                         // 支付成功 移除任务
-                        orderTransportService.payOrder(bookNumber, userInfo);
-                        removeTaskMap(dto.getOrderKey());
-                        log.info("抢购成功! user = {}, date = {}", dto.getPhoneNumber(), dto.getDate());
+                        orderTransportService.payOrder(bookNumber, taskDto);
+                        removeTaskMap(taskDto.getOrderTaskId());
+                        log.info("抢购成功! taskDto = {}", taskDto);
                         break;
                     } catch (Exception e) {
-                        log.error("支付失败, 重试第{}次, dto = {},  e = {}", i, dto, e);
+                        log.error("支付失败, 重试第{}次, taskDto = {},  e = {}", i, taskDto, e);
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("抢购任务异常, dto = {}, e = {}", dto, e);
+            log.error("抢购任务异常, taskDto = {}, e = {}", taskDto, e);
         } finally {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
@@ -201,9 +215,9 @@ public class OrderService {
     /**
      * 添加任务
      */
-    private void addTaskMap(CreateOrderDto dto) {
-        taskLockMap.put(dto.getOrderKey(), new ReentrantLock());
-        taskMap.put(dto.getOrderKey(), dto);
+    private void addTaskMap(OrderTaskDto dto) {
+        taskLockMap.put(dto.getOrderTaskId(), new ReentrantLock());
+        taskMap.put(dto.getOrderTaskId(), dto);
     }
 
     /**
@@ -213,5 +227,16 @@ public class OrderService {
     private void removeTaskMap(String key) {
         taskLockMap.remove(key);
         taskMap.remove(key);
+    }
+
+    /**
+     * 生成任务ID
+     * @param phoneNumber
+     * @param date
+     * @param venueId
+     * @return
+     */
+    private String generateOrderTaskId(String phoneNumber, String date, String venueId) {
+        return phoneNumber + "-" + date + "-" + venueId;
     }
 }
