@@ -27,13 +27,13 @@ public class VenueTransportService extends TransportBaseService {
         if (null == responseDto
                 || null == responseDto.getBody()
                 || null == responseDto.getBody().getVenueTypeList()) {
-            throw new IllegalArgumentException("无法获取场地列表");
+            throw new RuntimeException("无法获取场地列表");
         }
         Optional<VenueTypeDto> venueTypeDtoOptional = responseDto.getBody().getVenueTypeList().stream().filter(x -> x.getVenueTypeName().equals(venueTypeName)).findAny();
         if (venueTypeDtoOptional.isPresent()) {
             return venueTypeDtoOptional.get().getVenueTypeCode();
         }
-        throw new IllegalArgumentException("无法获取场地Code");
+        throw new RuntimeException("无法获取场地Code");
     }
 
     /**
@@ -48,7 +48,7 @@ public class VenueTransportService extends TransportBaseService {
                 || null == responseDto.getBody()
                 || null == responseDto.getBody().getVenueEntityList()
                 || responseDto.getBody().getVenueEntityList().isEmpty()) {
-            throw new IllegalArgumentException("获取场馆信息异常");
+            throw new RuntimeException("获取场馆信息异常");
         }
         return responseDto.getBody().getVenueEntityList().get(0);
     }
@@ -65,7 +65,7 @@ public class VenueTransportService extends TransportBaseService {
         if (null == responseDto
                 || null == responseDto.getBody()
                 || null == responseDto.getBody().getVenueEntity()) {
-            throw new IllegalArgumentException("获取场馆详细信息异常");
+            throw new RuntimeException("获取场馆详细信息异常");
         }
         return responseDto.getBody().getVenueEntity();
     }
