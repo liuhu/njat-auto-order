@@ -1,0 +1,161 @@
+openapi: 3.0.0
+info:
+  version: v1.0
+  title: 奥体场地抢购 API
+
+servers:
+  - url: 'http://172.16.1.8:29300'
+    description: 服务地址
+  - url: 'http://127.0.0.1:29300'
+    description: 本地调测
+
+paths:
+  '/tasks':
+    post:
+      summary: 创建预定任务
+      description: 创建预定任务
+      tags:
+        - 预定任务管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskDto'
+      responses:
+        '200':
+          description: 任务详细信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskInfoDto'
+    get:
+      summary: 获取所有任务详细信息
+      description: 获取所有任务详细信息
+      tags:
+        - 预定任务管理
+      responses:
+        '200':
+          description: 获取所有任务详细信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskInfoDto'
+
+  '/tasks/clean':
+    post:
+      summary: 清除任务
+      description: 清除任务
+      tags:
+        - 预定任务管理
+      responses:
+        '200':
+          description: 任务详细信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskInfoDto'
+  '/tasks/panic':
+    post:
+      summary: 立刻抢购
+      description: 立刻抢购
+      tags:
+        - 预定任务管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskDto'
+      responses:
+        '200':
+          description: 任务详细信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskInfoDto'
+components:
+  schemas:
+    CreateTaskDto:
+      type: object
+      properties:
+        date:
+          type: string
+          description: 预定场地日期
+          example: '2019-04-15'
+        times:
+          type: array
+          description: 预定场地时间段
+          items:
+            type: string
+          example: ["19:00","20:00"]
+        phoneNumber:
+          type: string
+          description: 登录手机号
+          example: '15365010926'
+        password:
+          type: string
+          description: 登录密码
+          example: '100030'
+        venueTypeName:
+          type: string
+          description: 场地类型
+          enum:
+            - 体育馆
+            - 游泳馆
+            - 网球中心
+          example: '体育馆'
+        venuePriority:
+          type: array
+          description: 场地优先级
+          items:
+            type: integer
+          example: [1,2]
+
+    TaskInfoDto:
+      type: object
+      properties:
+        taskId:
+          type: string
+          description: 任务ID
+          example: '手机号+预定日期+场地ID'
+        userId:
+          type: string
+          description: 用户ID
+          example: '34693021860297337'
+        payCardId:
+          type: string
+          description: 支付卡ID
+          example: '0013403058'
+        payPass:
+          type: string
+          description: 支付卡密码
+          example: '100030'
+        venueId:
+          type: string
+          description: 场地ID
+          example: '60497855257431'
+        venueName:
+          type: string
+          description: 场地名称
+          example: '游泳馆羽毛球'
+        orgCode:
+          type: string
+          description: orgCode
+          example: 'fe9d896bf6ad4ff88d69d7c477c9356e'
+        date:
+          type: string
+          description: 预定场地日期
+          example: '2019-04-15'
+        times:
+          type: array
+          description: 预定场地时间段
+          items:
+            type: string
+          example: ["19:00","20:00"]
+        venuePriority:
+          type: array
+          description: 场地优先级
+          items:
+            type: integer
+          example: [1,2]
