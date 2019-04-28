@@ -1,5 +1,6 @@
 package com.acloudchina.hacker.njat.controller;
 
+import com.acloudchina.hacker.njat.dto.venue.order.SellOrderDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderQueryDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.service.transport.VenueTransportService;
@@ -7,7 +8,12 @@ import com.acloudchina.hacker.njat.utils.EncryptionUtils;
 import com.acloudchina.hacker.njat.utils.GetKeyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
 
 /**
@@ -23,6 +29,9 @@ public class TestController {
     @Autowired
     private VenueTransportService venueTransportService;
 
+    @Autowired
+    private ThreadPoolExecutor threadPoolExecutor;
+
 
     @GetMapping("/venueOrders")
     public VenueOrderResponseBodyDto getVenueOrder(String date) {
@@ -31,6 +40,25 @@ public class TestController {
         queryDto.setDate(null != date ? date : "2019-04-30");
         queryDto.setUserId("34693021860297337");
         return venueTransportService.getVenueOrder(queryDto);
+    }
+
+    //@Scheduled(zone = "Asia/Shanghai", cron = "0,1,2,4,6,8 0,1,2 6 * * ?")
+    public void test() {
+        threadPoolExecutor.execute(() -> {
+            log.info("查询Start");
+            VenueOrderQueryDto queryDto = new VenueOrderQueryDto();
+            queryDto.setVenueId("60497855257431");
+            queryDto.setDate("2019-05-01");
+            queryDto.setUserId("34693021860297337");
+            VenueOrderResponseBodyDto bodyDto = venueTransportService.getVenueOrder(queryDto);
+            if (null ==  bodyDto || null == bodyDto.getSellOrderMap()) {
+                log.info("查询End, is null");
+            } else {
+                List<SellOrderDto> bookedOrder = bodyDto.getSellOrderMap().values().stream().flatMap(x -> x.stream()).filter(x -> x.getIsBook() == 1).collect(Collectors.toList());
+                log.info("查询End, bookedOrder = {}", bookedOrder);
+            }
+
+        });
     }
 
     /**
