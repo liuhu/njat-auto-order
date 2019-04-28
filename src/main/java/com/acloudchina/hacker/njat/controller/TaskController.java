@@ -16,7 +16,7 @@ import java.util.Map;
  **/
 @RestController
 @RequestMapping("/tasks")
-public class OrderController {
+public class TaskController {
 
     @Autowired
     private TaskService taskService;
@@ -41,7 +41,7 @@ public class OrderController {
         return taskService.getAllTask();
     }
 
-        @PostMapping("/panic")
+    @PostMapping("/panic")
     public TaskInfoDto cleanTask(@RequestBody @Valid CreateTaskDto dto) {
         return taskService.immediatePanic(dto);
     }
