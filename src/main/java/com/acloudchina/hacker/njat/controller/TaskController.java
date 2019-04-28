@@ -42,7 +42,7 @@ public class TaskController {
     }
 
     @PostMapping("/panic")
-    public TaskInfoDto cleanTask(@RequestBody @Valid CreateTaskDto dto) {
+    public TaskInfoDto panic(@RequestBody @Valid CreateTaskDto dto) {
         return taskService.immediatePanic(dto);
     }
 
