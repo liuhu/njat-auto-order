@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.UUID;
+
 /**
  * @description:
  * @author: LiuHu
@@ -26,6 +28,8 @@ public abstract class TransportBaseService {
     public <T> T exchange(Object request, String requestUrl, Class<T> type) {
         RequestDto requestDto = new RequestDto();
         requestDto.setBody(EncryptionUtils.encrypt2Aes(jsonMapper.toJson(request), GetKeyUtils.getKey()));
+        // 突破流控限制
+        headerDto.setDeviceId("8" + UUID.randomUUID().toString());
         requestDto.setHeader(headerDto);
 
         ResponseEntity<String> response = restTemplate.postForEntity(requestUrl, requestDto, String.class);

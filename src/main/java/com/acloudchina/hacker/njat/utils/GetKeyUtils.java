@@ -7,6 +7,11 @@ package com.acloudchina.hacker.njat.utils;
  **/
 public class GetKeyUtils {
 
+    /**
+     * 获取加密解密key
+     * www.wowsport.cn + deviceId的首位
+     * @return
+     */
     public static String getKey() {
         return "www.wowsport.cn8";
     }

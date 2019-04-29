@@ -1,5 +1,7 @@
 package com.acloudchina.hacker.njat.utils;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -8,6 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
  * @author: LiuHu
  * @create: 2019-04-15 22:03
  **/
+@Slf4j
 public class EncryptionUtils {
 
 
@@ -58,6 +61,7 @@ public class EncryptionUtils {
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
             return new String(cipher.doFinal(hexParseByte2(src)));
         } catch (Exception e) {
+            log.error("解码失败, key = {}, src = {}", key, src);
             return null;
         }
     }
