@@ -17,6 +17,6 @@ public class ThreadPoolConfig {
     @Bean
     public ThreadPoolExecutor threadPoolExecutor() {
         ThreadFactory factory = new ThreadFactoryBuilder().setNameFormat("order-pool-%d").build();
-        return new ThreadPoolExecutor(5, 5, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(100), factory, new ThreadPoolExecutor.AbortPolicy());
+        return new ThreadPoolExecutor(10, 10, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(100), factory, new ThreadPoolExecutor.AbortPolicy());
     }
 }
