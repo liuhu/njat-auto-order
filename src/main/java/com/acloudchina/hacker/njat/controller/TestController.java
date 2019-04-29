@@ -38,7 +38,7 @@ public class TestController {
         VenueOrderQueryDto queryDto = new VenueOrderQueryDto();
         queryDto.setVenueId("60497855257431");
         queryDto.setDate(null != date ? date : "2019-04-30");
-        queryDto.setUserId("34693021860297337");
+        //queryDto.setUserId("34693021860297337");
         return venueTransportService.getVenueOrder(queryDto);
     }
 
