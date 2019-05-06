@@ -136,9 +136,9 @@ public class TaskService {
     public void panicTask() {
         taskMap.values().forEach(
                 x -> {
-                    LocalDateTime now = LocalDateTime.now();
-                    String nowStr = now.format(DATE_TIME_FORMATTER);
-                    if (nowStr.equals(x.getDate())) {
+                    // 抢购日期提前两天
+                    String dateStr = LocalDateTime.now().plusDays(2).format(DATE_TIME_FORMATTER);
+                    if (dateStr.equals(x.getDate())) {
                         threadPoolExecutor.execute(() -> panic(x));
                     } else {
                         log.info("还未到达抢购时间, x = {}", x);
