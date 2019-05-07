@@ -21,7 +21,7 @@ public class HeartbeatService {
     /**
      * 心跳任务, 保持和服务器的通信, 为抢购做准备
      */
-    @Scheduled(initialDelay = 5000, fixedRate = 30000)
+    @Scheduled(initialDelay = 5000, fixedRate = 37000)
     public void heartbeatTask() {
         long startTime = System.currentTimeMillis();
         venueTransportService.getVenueTypeCodeByName("游泳馆");
