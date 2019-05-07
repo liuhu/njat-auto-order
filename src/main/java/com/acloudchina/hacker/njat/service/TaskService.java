@@ -20,8 +20,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.locks.ReentrantLock;
-
 /**
  * @description:
  * @author: LiuHu
@@ -63,12 +61,8 @@ public class TaskService {
     private Map<String, TaskInfoDto> taskMap = new ConcurrentHashMap<>();
 
     /**
-     * 任务锁, 防止任务重复执行
-     */
-    private Map<String, ReentrantLock> taskLockMap = new ConcurrentHashMap<>();
-
-    /**
      * 添加任务, 一个用户在只能添加一天添加一条任务, 否则会被覆盖
+     *
      * @param dto
      * @return
      */
@@ -93,6 +87,7 @@ public class TaskService {
         taskInfoDto.setOrgCode(venueEntityDto.getOrgCode());
         taskInfoDto.setDate(dto.getDate());
         taskInfoDto.setTimes(dto.getTimes());
+        taskInfoDto.setAutoPay(dto.isAutoPay());
         if (null != dto.getVenuePriority() && !dto.getVenuePriority().isEmpty()) {
             taskInfoDto.setVenuePriority(dto.getVenuePriority());
         } else {
@@ -106,12 +101,12 @@ public class TaskService {
      * 清除任务
      */
     public void cleanTask() {
-        taskLockMap.clear();
         taskMap.clear();
     }
 
     /**
      * 获取全部任务
+     *
      * @return
      */
     public Map<String, TaskInfoDto> getAllTask() {
@@ -120,6 +115,7 @@ public class TaskService {
 
     /**
      * 立刻抢购
+     *
      * @param dto
      */
     public TaskInfoDto immediatePanic(CreateTaskDto dto) {
@@ -152,44 +148,44 @@ public class TaskService {
      * @param taskDto
      */
     private void panic(TaskInfoDto taskDto) {
-        ReentrantLock lock = taskLockMap.get(taskDto.getTaskId());
         try {
-            if (lock.tryLock()) {
-                log.info("开始抢购! taskDto = {}", taskDto);
 
-                // 获取场地信息
-                VenueOrderQueryDto venueOrderQueryDto = new VenueOrderQueryDto();
-                venueOrderQueryDto.setUserId(taskDto.getUserId());
-                venueOrderQueryDto.setDate(taskDto.getDate());
-                venueOrderQueryDto.setVenueId(taskDto.getVenueId());
-                VenueOrderResponseBodyDto orderResponse = venueTransportService.getVenueOrder(venueOrderQueryDto);
-                if (null == orderResponse
-                        || null == orderResponse.getSellOrderMap()
-                        || orderResponse.getSellOrderMap().isEmpty()) {
-                    log.warn("[{}]-[{}]的场地还未开放预定, 或获取场地失败. dto = {}", taskDto.getDate(), taskDto.getVenueName(), taskDto);
-                    return;
+            log.info("开始抢购! taskDto = {}", taskDto);
+
+            // 获取场地信息
+            VenueOrderQueryDto venueOrderQueryDto = new VenueOrderQueryDto();
+            venueOrderQueryDto.setUserId(taskDto.getUserId());
+            venueOrderQueryDto.setDate(taskDto.getDate());
+            venueOrderQueryDto.setVenueId(taskDto.getVenueId());
+            VenueOrderResponseBodyDto orderResponse = venueTransportService.getVenueOrder(venueOrderQueryDto);
+            if (null == orderResponse
+                    || null == orderResponse.getSellOrderMap()
+                    || orderResponse.getSellOrderMap().isEmpty()) {
+                log.warn("[{}]-[{}]的场地还未开放预定, 或获取场地失败. dto = {}", taskDto.getDate(), taskDto.getVenueName(), taskDto);
+                return;
+            }
+
+            // 根据场地优先级创建订单
+            String bookNumber = null;
+            for (Integer venueId : taskDto.getVenuePriority()) {
+                try {
+                    bookNumber = orderTransportService.createOrder(taskDto, orderResponse.getSellOrderMap().get(venueId));
+                    // 订单创建成功跳出循环
+                    break;
+                } catch (Exception e) {
+                    log.error("创建订单失败, venueName = {}, taskDto = {}, e = {}", taskDto.getVenueName(), taskDto, e);
                 }
+            }
 
-                // 根据场地优先级创建订单
-                String bookNumber = null;
-                for (Integer venueId : taskDto.getVenuePriority()) {
-                    try {
-                        bookNumber = orderTransportService.createOrder(taskDto, orderResponse.getSellOrderMap().get(venueId));
-                        // 订单创建成功跳出循环
-                        break;
-                    } catch (Exception e) {
-                        log.error("创建订单失败, venueName = {}, taskDto = {}, e = {}", taskDto.getVenueName(), taskDto, e);
-                    }
-                }
+            // 订单创建失败
+            if (null == bookNumber) {
+                // 订单创建失败, 移除任务
+                removeTaskMap(taskDto.getTaskId());
+                log.error("抢购失败 - 创建订单失败! taskDto = {}", taskDto);
+                return;
+            }
 
-                // 订单创建失败
-                if (null == bookNumber) {
-                    // 订单创建失败, 移除任务
-                    removeTaskMap(taskDto.getTaskId());
-                    log.error("抢购失败 - 创建订单失败! taskDto = {}", taskDto);
-                    return;
-                }
-
+            if (taskDto.isAutoPay()) {
                 // 支付订单
                 for (int i = 0; i < PAY_RETRY_COUNT; i++) {
                     try {
@@ -205,10 +201,6 @@ public class TaskService {
             }
         } catch (Exception e) {
             log.error("抢购任务异常, taskDto = {}, e = {}", taskDto, e);
-        } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
         }
     }
 
@@ -216,21 +208,21 @@ public class TaskService {
      * 添加任务
      */
     private void addTaskMap(TaskInfoDto dto) {
-        taskLockMap.put(dto.getTaskId(), new ReentrantLock());
         taskMap.put(dto.getTaskId(), dto);
     }
 
     /**
      * 移除任务
+     *
      * @param key
      */
     private void removeTaskMap(String key) {
-        taskLockMap.remove(key);
         taskMap.remove(key);
     }
 
     /**
      * 生成任务ID
+     *
      * @param phoneNumber
      * @param date
      * @param venueId

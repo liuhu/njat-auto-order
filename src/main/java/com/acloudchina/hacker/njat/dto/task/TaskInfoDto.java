@@ -62,4 +62,9 @@ public class TaskInfoDto {
      * 场地优先级
      */
     private List<Integer> venuePriority;
+
+    /**
+     * 是否自动支付
+     */
+    private boolean autoPay = true;
 }
