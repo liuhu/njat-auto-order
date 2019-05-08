@@ -40,7 +40,7 @@ public class OrderTransportService extends TransportBaseService {
                 .filter(x -> x.getIsBook() == 0)
                 .collect(Collectors.toList());
         if (pendingOrder.size() != taskInfoDto.getTimes().size()) {
-            log.warn("场地已被预定, pendingOrder = {}", pendingOrder);
+            log.warn("场地已被预定, orderInfo = {}", sellOrderDtos.stream().filter(x -> taskInfoDto.getTimes().contains(x.getStartDate())).collect(Collectors.toList()));
             throw new RuntimeException("场地已被预定");
         }
 
