@@ -48,7 +48,7 @@ public abstract class TransportBaseService {
             String responseJsonStr = EncryptionUtils.decodeFromAes(response.getBody(), GetKeyUtils.getKey());
             return JSON_MAPPER.fromJson(responseJsonStr, type);
         } catch (RestClientException e) {
-            log.error("接口调用异常, e = {}", e.getMessage());
+            log.error("接口调用异常, requestUrl = {}, e = {}", requestUrl, e.getMessage());
             throw new RuntimeException("接口调用异常!");
         }
     }
