@@ -154,7 +154,7 @@ public class TaskService {
 
             // 获取场地信息
             VenueOrderQueryDto venueOrderQueryDto = new VenueOrderQueryDto();
-            venueOrderQueryDto.setUserId(taskDto.getUserId());
+            //venueOrderQueryDto.setUserId(taskDto.getUserId());
             venueOrderQueryDto.setDate(taskDto.getDate());
             venueOrderQueryDto.setVenueId(taskDto.getVenueId());
             VenueOrderResponseBodyDto orderResponse = venueTransportService.getVenueOrder(venueOrderQueryDto);
