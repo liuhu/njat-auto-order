@@ -28,9 +28,9 @@ public abstract class TransportBaseService {
     private static final RequestHeaderDto HEADER = new RequestHeaderDto();
     private static final AtomicLong ADDER = new AtomicLong();
     /**
-     * 模拟10个终端
+     * 模拟20个终端
      */
-    private static final Map<Long, String> DEVICE_ID_MAP = LongStream.rangeClosed(0, 9).sorted()
+    private static final Map<Long, String> DEVICE_ID_MAP = LongStream.rangeClosed(0, 19).sorted()
             .collect(HashMap::new, (m, v) -> m.put(v, UUID.randomUUID().toString()), HashMap::putAll);
 
     @Autowired
