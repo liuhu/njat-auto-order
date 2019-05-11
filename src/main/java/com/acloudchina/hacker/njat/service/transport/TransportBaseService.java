@@ -44,7 +44,10 @@ public abstract class TransportBaseService {
         requestDto.setHeader(HEADER);
 
         try {
+            long startTime = System.currentTimeMillis();
             ResponseEntity<String> response = restTemplate.postForEntity(requestUrl, requestDto, String.class);
+            long endTime = System.currentTimeMillis();
+            log.info("请求: {}, 耗时: {}ms", requestUrl, endTime - startTime);
             String responseJsonStr = EncryptionUtils.decodeFromAes(response.getBody(), GetKeyUtils.getKey());
             return JSON_MAPPER.fromJson(responseJsonStr, type);
         } catch (RestClientException e) {

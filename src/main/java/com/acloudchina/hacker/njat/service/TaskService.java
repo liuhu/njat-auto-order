@@ -6,8 +6,8 @@ import com.acloudchina.hacker.njat.dto.task.TaskInfoDto;
 import com.acloudchina.hacker.njat.dto.user.UserInfoDto;
 import com.acloudchina.hacker.njat.dto.venue.VenueEntityDto;
 import com.acloudchina.hacker.njat.dto.venue.VenueListEntityDto;
+import com.acloudchina.hacker.njat.dto.venue.order.SellOrderDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderQueryDto;
-import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.service.transport.OrderTransportService;
 import com.acloudchina.hacker.njat.service.transport.VenueTransportService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -157,10 +158,8 @@ public class TaskService {
             //venueOrderQueryDto.setUserId(taskDto.getUserId());
             venueOrderQueryDto.setDate(taskDto.getDate());
             venueOrderQueryDto.setVenueId(taskDto.getVenueId());
-            VenueOrderResponseBodyDto orderResponse = venueTransportService.getVenueOrder(venueOrderQueryDto);
-            if (null == orderResponse
-                    || null == orderResponse.getSellOrderMap()
-                    || orderResponse.getSellOrderMap().isEmpty()) {
+            Map<Integer, List<SellOrderDto>> venueOrderMap = venueTransportService.getVenueOrder(venueOrderQueryDto);
+            if (null == venueOrderMap) {
                 log.warn("[{}]-[{}]的场地还未开放预定, 或获取场地失败. dto = {}", taskDto.getDate(), taskDto.getVenueName(), taskDto);
                 return;
             }
@@ -169,7 +168,7 @@ public class TaskService {
             String bookNumber = null;
             for (Integer venueId : taskDto.getVenuePriority()) {
                 try {
-                    bookNumber = orderTransportService.createOrder(taskDto, orderResponse.getSellOrderMap().get(venueId));
+                    bookNumber = orderTransportService.createOrder(taskDto, venueOrderMap.get(venueId));
                     // 订单创建成功跳出循环
                     break;
                 } catch (Exception e) {

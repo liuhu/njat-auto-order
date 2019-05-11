@@ -2,7 +2,6 @@ package com.acloudchina.hacker.njat.controller;
 
 import com.acloudchina.hacker.njat.dto.venue.order.SellOrderDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderQueryDto;
-import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.service.transport.VenueTransportService;
 import com.acloudchina.hacker.njat.utils.EncryptionUtils;
 import com.acloudchina.hacker.njat.utils.GetKeyUtils;
@@ -12,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
@@ -34,7 +34,7 @@ public class TestController {
 
 
     @GetMapping("/venueOrders")
-    public VenueOrderResponseBodyDto getVenueOrder(String date) {
+    public Map<Integer, List<SellOrderDto>> getVenueOrder(String date) {
         VenueOrderQueryDto queryDto = new VenueOrderQueryDto();
         queryDto.setVenueId("60497855257431");
         queryDto.setDate(null != date ? date : "2019-04-30");
@@ -50,11 +50,11 @@ public class TestController {
             queryDto.setVenueId("60497855257431");
             queryDto.setDate("2019-05-01");
             queryDto.setUserId("34693021860297337");
-            VenueOrderResponseBodyDto bodyDto = venueTransportService.getVenueOrder(queryDto);
-            if (null ==  bodyDto || null == bodyDto.getSellOrderMap()) {
+            Map<Integer, List<SellOrderDto>> venueOrderMap = venueTransportService.getVenueOrder(queryDto);
+            if (null == venueOrderMap) {
                 log.info("查询End, is null");
             } else {
-                List<SellOrderDto> bookedOrder = bodyDto.getSellOrderMap().values().stream().flatMap(x -> x.stream()).filter(x -> x.getIsBook() == 1).collect(Collectors.toList());
+                List<SellOrderDto> bookedOrder = venueOrderMap.values().stream().flatMap(x -> x.stream()).filter(x -> x.getIsBook() == 1).collect(Collectors.toList());
                 log.info("查询End, bookedOrder = {}", bookedOrder);
             }
 

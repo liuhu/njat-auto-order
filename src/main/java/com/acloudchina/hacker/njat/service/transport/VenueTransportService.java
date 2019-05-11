@@ -2,12 +2,18 @@ package com.acloudchina.hacker.njat.service.transport;
 
 import com.acloudchina.hacker.njat.dto.common.Constants;
 import com.acloudchina.hacker.njat.dto.venue.*;
+import com.acloudchina.hacker.njat.dto.venue.order.SellOrderDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderQueryDto;
-import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseBodyDto;
 import com.acloudchina.hacker.njat.dto.venue.order.VenueOrderResponseDto;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @description:
@@ -15,7 +21,15 @@ import java.util.Optional;
  * @create: 2019-04-16 23:10
  **/
 @Service
+@Slf4j
 public class VenueTransportService extends TransportBaseService {
+
+    /**
+     * 缓存场地订单信息
+     */
+    private Cache<String, Map<Integer, List<SellOrderDto>>> orderCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(60, TimeUnit.SECONDS)
+            .build();
 
     /**
      * 查询场地类型信息
@@ -75,13 +89,32 @@ public class VenueTransportService extends TransportBaseService {
      * @param queryDto
      * @return
      */
-    public VenueOrderResponseBodyDto getVenueOrder(VenueOrderQueryDto queryDto) {
-        VenueOrderResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_SELL_ORDER, VenueOrderResponseDto.class);
-        if (null == responseDto || null == responseDto.getBody()) {
+    public Map<Integer, List<SellOrderDto>> getVenueOrder(VenueOrderQueryDto queryDto) {
+        try {
+            return orderCache.get(buildOrderKey(queryDto), () -> {
+                VenueOrderResponseDto responseDto = exchange(queryDto, Constants.QUERY_VENUE_SELL_ORDER, VenueOrderResponseDto.class);
+                if (null == responseDto || null == responseDto.getBody()) {
+                    return null;
+                }
+                Map<Integer, List<SellOrderDto>> orderMap = responseDto.getBody().getSellOrderMap();
+                if (null == orderMap || orderMap.isEmpty()) {
+                    return null;
+                }
+                return orderMap;
+            });
+        } catch (Exception e) {
+            log.error("场地订单信息获取异常, queryDto = {}", queryDto);
             return null;
         }
-        return responseDto.getBody();
     }
 
+    /**
+     * 生成场地订单信息
+     * @param queryDto
+     * @return
+     */
+    private String buildOrderKey(VenueOrderQueryDto queryDto) {
+        return queryDto.getDate() + ":" + queryDto.getUserId();
+    }
 
 }
