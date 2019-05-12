@@ -103,7 +103,7 @@ public class VenueTransportService extends TransportBaseService {
                 return orderMap;
             });
         } catch (Exception e) {
-            log.error("场地订单信息获取异常, queryDto = {}", queryDto);
+            log.error("场地订单信息获取异常, queryDto = {}, e = {}", queryDto, e.getMessage());
             return null;
         }
     }
@@ -114,7 +114,7 @@ public class VenueTransportService extends TransportBaseService {
      * @return
      */
     private String buildOrderKey(VenueOrderQueryDto queryDto) {
-        return queryDto.getDate() + ":" + queryDto.getUserId();
+        return queryDto.getDate() + ":" + queryDto.getVenueId();
     }
 
 }

@@ -1,5 +1,6 @@
 package com.acloudchina.hacker.njat.service.transport;
 
+import com.acloudchina.hacker.njat.dto.common.Constants;
 import com.acloudchina.hacker.njat.dto.common.RequestDto;
 import com.acloudchina.hacker.njat.dto.common.RequestHeaderDto;
 import com.acloudchina.hacker.njat.utils.EncryptionUtils;
@@ -36,6 +37,9 @@ public abstract class TransportBaseService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private RestTemplate restTemplateWithTimeOut;
+
     public <T> T exchange(Object request, String requestUrl, Class<T> type) {
         RequestDto requestDto = new RequestDto();
         requestDto.setBody(EncryptionUtils.encrypt2Aes(JSON_MAPPER.toJson(request), GetKeyUtils.getKey()));
@@ -45,7 +49,12 @@ public abstract class TransportBaseService {
 
         try {
             long startTime = System.currentTimeMillis();
-            ResponseEntity<String> response = restTemplate.postForEntity(requestUrl, requestDto, String.class);
+            ResponseEntity<String> response;
+            if (Constants.QUERY_VENUE_SELL_ORDER.equals(requestUrl)) {
+                response = restTemplateWithTimeOut.postForEntity(requestUrl, requestDto, String.class);
+            } else {
+                response = restTemplate.postForEntity(requestUrl, requestDto, String.class);
+            }
             long endTime = System.currentTimeMillis();
             log.info("请求: {}, 耗时: {}ms", requestUrl, endTime - startTime);
             String responseJsonStr = EncryptionUtils.decodeFromAes(response.getBody(), GetKeyUtils.getKey());
