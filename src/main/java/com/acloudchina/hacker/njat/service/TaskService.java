@@ -184,6 +184,8 @@ public class TaskService {
                 return;
             }
 
+            log.info("创建订单成功, bookNumber = {}, taskDto = {}", bookNumber, taskDto);
+
             if (taskDto.isAutoPay()) {
                 // 支付订单
                 for (int i = 0; i < PAY_RETRY_COUNT; i++) {
