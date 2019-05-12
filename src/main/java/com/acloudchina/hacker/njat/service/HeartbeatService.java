@@ -23,9 +23,6 @@ public class HeartbeatService {
      */
     @Scheduled(cron = "36 15,35,55 * * * ?")
     public void heartbeatTask() {
-        long startTime = System.currentTimeMillis();
         venueTransportService.getVenueTypeCodeByName("游泳馆");
-        long endTime = System.currentTimeMillis();
-        log.info("通信维持{}ms...", endTime - startTime);
     }
 }
