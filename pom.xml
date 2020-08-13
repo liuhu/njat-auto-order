@@ -14,7 +14,7 @@
 
 
     <properties>
-        <guava.version>23.0</guava.version>
+        <guava.version>24.1.1</guava.version>
         <swagger.output.dir>${project.build.directory}/swagger</swagger.output.dir>
     </properties>
 
